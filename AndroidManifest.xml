@@ -112,6 +112,7 @@
     android:supportsRtl="true"
     android:usesCleartextTraffic="false">
 
+    <uses-library android:name="com.qualcomm.qti.smartsearch" />
 
   </application>
 

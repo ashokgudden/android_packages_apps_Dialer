@@ -42,6 +42,7 @@ import com.android.dialer.database.FilteredNumberContract.FilteredNumberColumns;
 import com.android.dialer.smartdial.SmartDialNameMatcher;
 import com.android.dialer.smartdial.SmartDialPrefix;
 import com.android.dialer.util.PermissionsUtil;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Objects;
@@ -74,12 +75,16 @@ public class DialerDatabaseHelper extends SQLiteOpenHelper {
 
   private static final String LAST_UPDATED_MILLIS = "last_updated_millis";
   private static final String DATABASE_VERSION_PROPERTY = "database_version";
-  private static final int MAX_ENTRIES = 20;
+  private static final int MAX_ENTRIES = 40;
 
   private final Context mContext;
   private final Object mLock = new Object();
   private final AtomicBoolean mInUpdate = new AtomicBoolean(false);
   private boolean mIsTestInstance = false;
+
+  private Class mMultiMatchClass;
+  private Object mMultiMatchObject;
+  private Method mMultiMatchMethod;
 
   protected DialerDatabaseHelper(Context context, String databaseName, int dbVersion) {
     super(context, databaseName, null, dbVersion);
@@ -89,6 +94,33 @@ public class DialerDatabaseHelper extends SQLiteOpenHelper {
   public void setIsTestInstance(boolean isTestInstance) {
     mIsTestInstance = isTestInstance;
   }
+
+  private void initMultiLanguageSearch() {
+    try {
+        if (mMultiMatchClass == null) {
+            mMultiMatchClass = Class
+                    .forName("com.qualcomm.qti.smartsearch.SmartMatch");
+            Log.d(TAG, "create multi match success");
+        }
+        if (mMultiMatchObject == null && mMultiMatchClass != null) {
+            mMultiMatchObject = mMultiMatchClass.newInstance();
+        }
+        if (mMultiMatchMethod == null && mMultiMatchClass != null) {
+            mMultiMatchMethod = mMultiMatchClass.getDeclaredMethod(
+                    "getMatchStringIndex", String.class, String.class,
+                    int.class);
+        }
+    } catch (Exception e) {
+    }
+  }
+
+    public Object getMultiMatchObject() {
+        return mMultiMatchObject;
+    }
+
+    public Method getMultiMatchMethod() {
+        return mMultiMatchMethod;
+    }
 
   /**
    * Creates tables in the database when database is created for the first time.
@@ -599,6 +631,8 @@ public class DialerDatabaseHelper extends SQLiteOpenHelper {
   public void updateSmartDialDatabase() {
     LogUtil.enterBlock("DialerDatabaseHelper.updateSmartDialDatabase");
 
+    initMultiLanguageSearch();
+
     final SQLiteDatabase db = getWritableDatabase();
 
     synchronized (mLock) {
@@ -826,7 +860,7 @@ public class DialerDatabaseHelper extends SQLiteOpenHelper {
     final SQLiteDatabase db = getReadableDatabase();
 
     /** Uses SQL query wildcard '%' to represent prefix matching. */
-    final String looseQuery = query + "%";
+//    final String looseQuery = query + "%";
 
     final ArrayList<ContactNumber> result = new ArrayList<>();
 
@@ -853,20 +887,6 @@ public class DialerDatabaseHelper extends SQLiteOpenHelper {
                 + SmartDialDbColumns.CARRIER_PRESENCE
                 + " FROM "
                 + Tables.SMARTDIAL_TABLE
-                + " WHERE "
-                + SmartDialDbColumns.CONTACT_ID
-                + " IN "
-                + " (SELECT "
-                + PrefixColumns.CONTACT_ID
-                + " FROM "
-                + Tables.PREFIX_TABLE
-                + " WHERE "
-                + Tables.PREFIX_TABLE
-                + "."
-                + PrefixColumns.PREFIX
-                + " LIKE '"
-                + looseQuery
-                + "')"
                 + " ORDER BY "
                 + SmartDialSortingOrder.SORT_ORDER,
             new String[] {currentTimeStamp});
