@@ -900,4 +900,8 @@
   <!-- Label for setting that shows more information about the Phone app [CHAR LIMIT=30] -->
   <string name="about_phone_label">About</string>
 
+    <!-- Show or Hide Dialerpad -->
+    <string name="showdialer" translatable="false">Show dialpad automatically</string>
+    <string name="showdialer_title">Show dialpad automatically</string>
+    <string name="showdialer_summary">Shows dialpad automatically upon opening dialer app</string>
 </resources>

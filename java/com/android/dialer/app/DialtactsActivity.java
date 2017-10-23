@@ -26,11 +26,13 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.os.Trace;
+import android.preference.PreferenceManager;
 import android.provider.CallLog.Calls;
 import android.speech.RecognizerIntent;
 import android.support.annotation.MainThread;
@@ -1009,6 +1011,15 @@ public class DialtactsActivity extends TransactionSafeActivity
       if (showDialpadChooser && !mDialpadFragment.isVisible()) {
         mInCallDialpadUp = true;
       }
+    }
+
+    SharedPreferences getPrefs;
+    getPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+       
+    boolean isShowDialer = getPrefs.getBoolean(getApplicationContext().getString(R.string.showdialer), false);
+
+    if (isShowDialer) {
+        showDialpadFragment(false);
     }
   }
 
